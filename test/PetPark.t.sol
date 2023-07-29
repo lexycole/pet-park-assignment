@@ -4,10 +4,9 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/PetPark.sol";
 
-
 contract PetParkTest is Test, PetPark {
     PetPark petPark;
-    
+
     address testOwnerAccount;
 
     address testPrimaryAccount;
@@ -24,10 +23,11 @@ contract PetParkTest is Test, PetPark {
     function testOwnerCanAddAnimal() public {
         petPark.add(AnimalType.Fish, 5);
     }
-
+    // Test that any non-owner account cannot add animals using the add function
     function testCannotAddAnimalWhenNonOwner() public {
-        // 1. Complete this test and remove the assert line below
-        assert(false);
+        vm.prank(testPrimaryAccount);
+        vm.expectRevert("Only the contract owner can perform this operation");
+        petPark.add(AnimalType.Fish, 5);
     }
 
     function testCannotAddInvalidAnimal() public {
@@ -41,10 +41,11 @@ contract PetParkTest is Test, PetPark {
         emit Added(AnimalType.Fish, 5);
         petPark.add(AnimalType.Fish, 5);
     }
-
+    // Test that the borrow function fails when called with an age equal to 0
     function testCannotBorrowWhenAgeZero() public {
-        // 2. Complete this test and remove the assert line below
-        assert(false);
+        petPark.add(AnimalType.Fish, 5);
+        vm.expectRevert("Invalid Age");
+        petPark.borrow(0, Gender.Male, AnimalType.Fish);
     }
 
     function testCannotBorrowUnavailableAnimal() public {
@@ -94,7 +95,7 @@ contract PetParkTest is Test, PetPark {
         vm.prank(testPrimaryAccount);
         petPark.borrow(24, Gender.Male, AnimalType.Fish);
 
-		vm.expectRevert("Already adopted a pet");
+        vm.expectRevert("Already adopted a pet");
         vm.prank(testPrimaryAccount);
         petPark.borrow(24, Gender.Male, AnimalType.Fish);
 
@@ -109,11 +110,11 @@ contract PetParkTest is Test, PetPark {
         vm.prank(testPrimaryAccount);
         petPark.borrow(24, Gender.Male, AnimalType.Fish);
 
-		vm.expectRevert("Invalid Age");
+        vm.expectRevert("Invalid Age");
         vm.prank(testPrimaryAccount);
         petPark.borrow(23, Gender.Male, AnimalType.Fish);
 
-		vm.expectRevert("Invalid Gender");
+        vm.expectRevert("Invalid Gender");
         vm.prank(testPrimaryAccount);
         petPark.borrow(24, Gender.Female, AnimalType.Fish);
     }
@@ -125,10 +126,13 @@ contract PetParkTest is Test, PetPark {
         emit Borrowed(AnimalType.Fish);
         petPark.borrow(24, Gender.Male, AnimalType.Fish);
     }
-
+    // Test that the count of animal decreases correctly when the borrow function is called
     function testBorrowCountDecrement() public {
-        // 3. Complete this test and remove the assert line below
-        assert(false);
+        petPark.add(AnimalType.Fish, 5);
+        uint initialCount = petPark.animalCounts(AnimalType.Fish);
+        petPark.borrow(24, Gender.Male, AnimalType.Fish);
+        uint afterBorrowCount = petPark.animalCounts(AnimalType.Fish);
+        assertEq(afterBorrowCount, initialCount - 1);
     }
 
     function testCannotGiveBack() public {
@@ -145,6 +149,6 @@ contract PetParkTest is Test, PetPark {
         petPark.giveBackAnimal();
         uint currentPetCount = petPark.animalCounts(AnimalType.Fish);
 
-		assertEq(reducedPetCount, currentPetCount - 1);
+        assertEq(reducedPetCount, currentPetCount - 1);
     }
 }
